@@ -1,0 +1,16 @@
+
+services:
+  go_db:
+    container_name: go_postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    image: postgres:14
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: go_bro123
+      POSTGRES_PASSWORD: go_password2006
+      POSTGRES_DB: go_bd
+
+volumes:
+  postgres_data:
