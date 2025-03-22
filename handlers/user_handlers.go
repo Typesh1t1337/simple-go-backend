@@ -42,9 +42,16 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		accessToken, refreshToken, tokenErr := utils.GetJwtToken(user.Email)
+
+		if tokenErr != nil {
+			http.Error(w, tokenErr.Error(), http.StatusBadRequest)
+		}
+
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]string{
-			"message": "User created successfully",
+			"access_token":  accessToken,
+			"refresh_token": refreshToken,
 		})
 
 	} else {
@@ -79,6 +86,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		}
 
 		hashErr := utils.CheckPasswordHash(user.Password, foundUser.Password)
+
 		if hashErr != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{
@@ -87,9 +95,46 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		accessToken, refreshToken, tokenErr := utils.GetJwtToken(user.Email)
+
+		if tokenErr != nil {
+			http.Error(w, tokenErr.Error(), http.StatusBadRequest)
+		}
+
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{
-			"message": "User logged successfully",
+			"access_token":  accessToken,
+			"refresh_token": refreshToken,
+		})
+
+	} else {
+		http.Error(w, `{"message" : "Method Not Allowed"}`, http.StatusMethodNotAllowed)
+	}
+}
+
+func UserProfile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == http.MethodGet {
+		email, ok := utils.GetEmailFromContext(r)
+
+		if !ok {
+			http.Error(w, `{"message" : "Unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
+
+		var user models.User
+
+		result := db.DB.Where("email = ?", email).First(&user)
+		if result.Error != nil {
+			http.Error(w, `{"message" : "Email or Password is incorrect"}`, http.StatusNotFound)
+			return
+		}
+
+		json.NewEncoder(w).Encode(map[string]string{
+			"email":      user.Email,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
 		})
 
 	} else {
