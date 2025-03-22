@@ -20,7 +20,7 @@ func CheckPasswordHash(password, hash string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
 
-func GetJwtToken(email string) (accessToken, RefreshToken string, err error) {
+func GetJwtToken(id uint) (accessToken, RefreshToken string, err error) {
 	errENV := godotenv.Load()
 
 	if errENV != nil {
@@ -28,9 +28,9 @@ func GetJwtToken(email string) (accessToken, RefreshToken string, err error) {
 	}
 
 	accessClaims := jwt.MapClaims{
-		"email": email,
-		"exp":   time.Now().Add(time.Hour * 48).Unix(),
-		"type":  "access",
+		"id":   id,
+		"exp":  time.Now().Add(time.Hour * 48).Unix(),
+		"type": "access",
 	}
 
 	accessToken, accessErr := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString([]byte(os.Getenv("JWT_SECRET")))
@@ -40,9 +40,9 @@ func GetJwtToken(email string) (accessToken, RefreshToken string, err error) {
 	}
 
 	refreshClaims := jwt.MapClaims{
-		"email": email,
-		"exp":   time.Now().Add(time.Hour * 240).Unix(),
-		"type":  "refresh",
+		"id":   id,
+		"exp":  time.Now().Add(time.Hour * 240).Unix(),
+		"type": "refresh",
 	}
 
 	refreshToken, refreshErr := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(os.Getenv("JWT_SECRET")))
@@ -54,8 +54,8 @@ func GetJwtToken(email string) (accessToken, RefreshToken string, err error) {
 	return accessToken, refreshToken, nil
 }
 
-func GetEmailFromContext(r *http.Request) (string, bool) {
-	email, ok := r.Context().Value(middleware.UserContextKey).(string)
+func GetIDFromContext(r *http.Request) (uint, bool) {
+	id, ok := r.Context().Value(middleware.UserContextKey).(uint)
 
-	return email, ok
+	return id, ok
 }

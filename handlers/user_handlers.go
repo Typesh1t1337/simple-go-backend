@@ -42,7 +42,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		accessToken, refreshToken, tokenErr := utils.GetJwtToken(user.Email)
+		accessToken, refreshToken, tokenErr := utils.GetJwtToken(user.ID)
 
 		if tokenErr != nil {
 			http.Error(w, tokenErr.Error(), http.StatusBadRequest)
@@ -95,7 +95,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		accessToken, refreshToken, tokenErr := utils.GetJwtToken(user.Email)
+		accessToken, refreshToken, tokenErr := utils.GetJwtToken(foundUser.ID)
 
 		if tokenErr != nil {
 			http.Error(w, tokenErr.Error(), http.StatusBadRequest)
@@ -116,7 +116,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method == http.MethodGet {
-		email, ok := utils.GetEmailFromContext(r)
+		id, ok := utils.GetIDFromContext(r)
 
 		if !ok {
 			http.Error(w, `{"message" : "Unauthorized"}`, http.StatusUnauthorized)
@@ -125,16 +125,16 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 
 		var user models.User
 
-		result := db.DB.Where("email = ?", email).First(&user)
+		result := db.DB.Preload("Posts").First(&user, id)
 		if result.Error != nil {
 			http.Error(w, `{"message" : "Email or Password is incorrect"}`, http.StatusNotFound)
 			return
 		}
 
-		json.NewEncoder(w).Encode(map[string]string{
-			"email":      user.Email,
-			"first_name": user.FirstName,
-			"last_name":  user.LastName,
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"email":     user.Email,
+			"full_name": user.FirstName + " " + user.LastName,
+			"posts":     user.Posts,
 		})
 
 	} else {

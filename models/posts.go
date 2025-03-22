@@ -9,5 +9,5 @@ type Post struct {
 	Name        string `gorm:"not null"`
 	Description string `gorm:"not null"`
 	UserID      uint   `gorm:"not null"`
-	User        User   `gorm:"foreignkey:UserID;constraint:OnDelete:CASCADE"`
+	User        User   `gorm:"foreignkey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 }
